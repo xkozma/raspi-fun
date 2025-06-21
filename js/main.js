@@ -33,6 +33,14 @@ function createWindow() {
   ipcMain.on('console-log', (event, message) => {
     console.log('Renderer log:', message);
   });
+
+  ipcMain.on('toggle-dark-mode', (event, isDarkMode) => {
+    console.log(`Dark mode is now ${isDarkMode ? 'enabled' : 'disabled'}`);
+  });
+
+  ipcMain.on('toggle-settings-menu', (event, isVisible) => {
+    console.log(`Settings menu is now ${isVisible ? 'visible' : 'hidden'}`);
+  });
 }
 
 app.whenReady().then(() => {
