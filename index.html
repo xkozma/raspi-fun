@@ -7,9 +7,20 @@
 </head>
 <body>
   <button id="close-button" class="close-button">X</button>
-  <div class="container">
+  <button id="settings-button" class="settings-button">
+    <img src="./assets/settings-icon.png" alt="Settings" />
+  </button>
+  <div id="settings-menu" class="settings-menu" style="display: none;">
     <button id="devtools-button" class="button">Open DevTools</button>
+    <div class="divider"></div>
     <button id="console-button" class="button">Debug to Console</button>
+  </div>
+  <div class="dashboard">
+    <div id="weather" class="dashboard-item">Weather: Loading...</div>
+    <div id="time" class="dashboard-item">Time: Loading...</div>
+    <div id="date" class="dashboard-item">Date: Loading...</div>
+    <div id="reminders" class="dashboard-item">Reminders: Loading...</div>
+    <div id="smart-home" class="dashboard-item">Smart Home: Loading...</div>
   </div>
   <script src="./js/renderer.js"></script>
 </body>

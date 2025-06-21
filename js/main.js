@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
+//const renderer = require('./renderer.js'); // Assuming you have a renderer.js file
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -16,7 +17,7 @@ function createWindow() {
   win.setMenuBarVisibility(false); // Hide the menu bar
 
   win.loadFile('index.html');
-
+  win.webContents.openDevTools({ mode: 'detach', activate: true });
   ipcMain.on('open-devtools', () => {
     try {
       win.webContents.openDevTools({ mode: 'detach', activate: true });
