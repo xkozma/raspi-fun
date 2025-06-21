@@ -1,0 +1,3 @@
+
+print("Music Player script executed")
+# ...future implementation for music player...
