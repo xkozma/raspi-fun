@@ -67,6 +67,7 @@ const turnOffButton = document.getElementById('turn-off-button');
 let isDarkMode = false;
 let mouseInTopArea = false;
 let mouseInSettingsMenu = false;
+let cursorTimeout;
 
 ipcRenderer.on('toggle-dark-mode', (event, enabled) => {
   isDarkMode = enabled;
@@ -86,6 +87,14 @@ document.addEventListener('mousemove', (event) => {
       }
     }, 300); // Delay to allow for smooth transitions
   }
+});
+
+document.addEventListener('mousemove', () => {
+  document.body.classList.remove('hide-cursor'); // Show cursor on movement
+  clearTimeout(cursorTimeout); // Reset timeout
+  cursorTimeout = setTimeout(() => {
+    document.body.classList.add('hide-cursor'); // Hide cursor after inactivity
+  }, 2000); // 2 seconds of inactivity
 });
 
 settingsMenu.addEventListener('mouseenter', () => {

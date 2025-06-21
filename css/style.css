@@ -16,6 +16,10 @@ body.dark-mode {
   display: none;
 }
 
+.hide-cursor {
+  cursor: none;
+}
+
 .container {
   display: flex;
   flex-direction: column;
