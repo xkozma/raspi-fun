@@ -46,6 +46,11 @@ function createWindow() {
 app.whenReady().then(() => {
   createWindow();
 
+  // Boot up in dark mode
+  setTimeout(() => {
+    BrowserWindow.getAllWindows()[0].webContents.send('toggle-dark-mode', true);
+  }, 100);
+
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();

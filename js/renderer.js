@@ -27,10 +27,6 @@ document.getElementById('console-button').addEventListener('click', () => {
   console.log('Debug message from the button!');
 });
 
-document.getElementById('close-button').addEventListener('click', () => {
-  ipcRenderer.send('close-app');
-});
-
 // Function to update the time and date
 function updateTimeAndDate() {
   const now = new Date();
@@ -61,3 +57,72 @@ setInterval(updateWeather, 5 * 60 * 1000);
 // Placeholder for weather and reminders
 document.getElementById('reminders').textContent = 'Reminders: No upcoming events';
 document.getElementById('smart-home').textContent = 'Smart Home: Placeholder';
+
+const settingsButton = document.getElementById('settings-button');
+const settingsMenu = document.getElementById('settings-menu');
+const darkModeToggle = document.getElementById('dark-mode-toggle');
+const settingsIcon = settingsButton.querySelector('img');
+const turnOffButton = document.getElementById('turn-off-button');
+
+let isDarkMode = false;
+let mouseInTopArea = false;
+let mouseInSettingsMenu = false;
+
+ipcRenderer.on('toggle-dark-mode', (event, enabled) => {
+  isDarkMode = enabled;
+  document.body.classList.toggle('dark-mode', isDarkMode);
+  settingsIcon.src = isDarkMode ? './assets/settings-icon-dark.png' : './assets/settings-icon.png';
+});
+
+document.addEventListener('mousemove', (event) => {
+  if (event.clientY <= 50 || mouseInSettingsMenu) { // Check if cursor is in top area or settings menu
+    mouseInTopArea = true;
+    toggleButtonsVisibility(true);
+  } else {
+    mouseInTopArea = false;
+    setTimeout(() => {
+      if (!mouseInTopArea && !mouseInSettingsMenu) {
+        toggleButtonsVisibility(false);
+      }
+    }, 300); // Delay to allow for smooth transitions
+  }
+});
+
+settingsMenu.addEventListener('mouseenter', () => {
+  mouseInSettingsMenu = true;
+  toggleButtonsVisibility(true);
+});
+
+settingsMenu.addEventListener('mouseleave', () => {
+  mouseInSettingsMenu = false;
+  setTimeout(() => {
+    if (!mouseInTopArea && !mouseInSettingsMenu) {
+      toggleButtonsVisibility(false);
+    }
+  }, 300);
+});
+
+settingsButton.addEventListener('click', () => {
+  settingsMenu.classList.toggle('hidden');
+});
+
+darkModeToggle.addEventListener('click', () => {
+  isDarkMode = !isDarkMode;
+  document.body.classList.toggle('dark-mode', isDarkMode);
+  ipcRenderer.send('toggle-dark-mode', isDarkMode);
+
+  // Update settings icon based on dark mode
+  settingsIcon.src = isDarkMode ? './assets/settings-icon-dark.png' : './assets/settings-icon.png';
+});
+
+turnOffButton.addEventListener('click', () => {
+  const confirmExit = confirm('Are you sure you want to exit the application?');
+  if (confirmExit) {
+    ipcRenderer.send('close-app');
+  }
+});
+
+function toggleButtonsVisibility(visible) {
+  const elements = [settingsButton];
+  elements.forEach(el => el.classList.toggle('hidden', !visible));
+}

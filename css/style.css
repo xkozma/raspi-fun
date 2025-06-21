@@ -38,27 +38,7 @@ body.dark-mode {
 }
 
 .close-button {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  font-size: 16px;
-  font-weight: bold;
-  color: #000000; /* Default light mode text color */
-  background: none; /* Remove background */
-  border: none;
-  cursor: pointer;
-}
-
-body.dark-mode .close-button {
-  color: #ffffff; /* Dark mode text color */
-}
-
-.close-button.hidden {
-  display: none; /* Simply hide the button */
-}
-
-.close-button:hover {
-  background-color: #cc0000;
+  display: none; /* Remove the close button from the top bar */
 }
 
 .dashboard {
@@ -86,7 +66,7 @@ body.dark-mode .dashboard-item {
 .settings-button {
   position: absolute;
   top: 10px;
-  right: 50px;
+  right: 10px; /* Move to the top-right corner */
   background: none;
   border: none;
   cursor: pointer;
@@ -141,6 +121,15 @@ body.dark-mode .settings-menu {
 
 body.dark-mode .settings-menu .button:hover {
   background-color: #333333; /* Darker hover effect in dark mode */
+}
+
+#turn-off-button {
+  color: red; /* Highlight the "Turn Off" button */
+  font-weight: bold;
+}
+
+#turn-off-button:hover {
+  background-color: #ffe6e6; /* Light red hover effect */
 }
 
 .settings-menu .divider {
