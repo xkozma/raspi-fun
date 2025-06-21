@@ -3,8 +3,8 @@ const path = require('path');
 
 function createWindow() {
   const win = new BrowserWindow({
-    width: 480,
-    height: 320,
+    width: 640,
+    height: 480,
     frame: false, // Make the window borderless
     webPreferences: {
       preload: path.join(__dirname,'preload.js'),
