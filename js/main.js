@@ -5,12 +5,15 @@ function createWindow() {
   const win = new BrowserWindow({
     width: 480,
     height: 320,
+    frame: false, // Make the window borderless
     webPreferences: {
       preload: path.join(__dirname,'preload.js'),
       nodeIntegration: true,
       contextIsolation: false,
     },
   });
+
+  win.setMenuBarVisibility(false); // Hide the menu bar
 
   win.loadFile('index.html');
 
@@ -45,4 +48,10 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
   }
+    app.quit();
+
+});
+
+ipcMain.on('close-app', () => {
+  app.quit();
 });
