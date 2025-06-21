@@ -1,2 +1,2 @@
 speechrecognition==3.8.1
-pyaudio==0.2.11
+pyaudio==0.2.13
