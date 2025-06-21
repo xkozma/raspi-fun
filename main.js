@@ -15,7 +15,19 @@ function createWindow() {
   win.loadFile('index.html');
 
   ipcMain.on('open-devtools', () => {
-    win.webContents.openDevTools({ mode: 'detach' });
+    try {
+      win.webContents.openDevTools({ mode: 'detach', activate: true });
+      console.log('DevTools opened successfully');
+      if (win.webContents.devToolsWebContents) {
+        win.webContents.devToolsWebContents.focus();
+      }
+    } catch (err) {
+      console.error('Failed to open DevTools:', err);
+    }
+  });
+
+  ipcMain.on('console-log', (event, message) => {
+    console.log('Renderer log:', message);
   });
 }
 

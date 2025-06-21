@@ -5,5 +5,6 @@ document.getElementById('devtools-button').addEventListener('click', () => {
 });
 
 document.getElementById('console-button').addEventListener('click', () => {
+  ipcRenderer.send('console-log', 'Debug message from the button!');
   console.log('Debug message from the button!');
 });
