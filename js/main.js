@@ -17,7 +17,7 @@ function createWindow() {
   win.setMenuBarVisibility(false); // Hide the menu bar
 
   win.loadFile('index.html');
-  win.webContents.openDevTools({ mode: 'detach', activate: true });
+  // win.webContents.openDevTools({ mode: 'detach', activate: true });
   ipcMain.on('open-devtools', () => {
     try {
       win.webContents.openDevTools({ mode: 'detach', activate: true });
@@ -45,11 +45,6 @@ function createWindow() {
 
 app.whenReady().then(() => {
   createWindow();
-
-  // Boot up in dark mode
-  setTimeout(() => {
-    BrowserWindow.getAllWindows()[0].webContents.send('toggle-dark-mode', true);
-  }, 100);
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

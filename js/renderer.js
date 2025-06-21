@@ -64,16 +64,16 @@ const darkModeToggle = document.getElementById('dark-mode-toggle');
 const settingsIcon = settingsButton.querySelector('img');
 const turnOffButton = document.getElementById('turn-off-button');
 
-let isDarkMode = false;
+let isDarkMode = true;
 let mouseInTopArea = false;
 let mouseInSettingsMenu = false;
 let cursorTimeout;
 
-ipcRenderer.on('toggle-dark-mode', (event, enabled) => {
-  isDarkMode = enabled;
-  document.body.classList.toggle('dark-mode', isDarkMode);
-  settingsIcon.src = isDarkMode ? './assets/settings-icon-dark.png' : './assets/settings-icon.png';
-});
+// ipcRenderer.on('toggle-dark-mode', (event, enabled) => {
+//   isDarkMode = enabled;
+//   document.body.classList.toggle('dark-mode', isDarkMode);
+//   settingsIcon.src = isDarkMode ? './assets/settings-icon-dark.png' : './assets/settings-icon.png';
+// });
 
 document.addEventListener('mousemove', (event) => {
   if (event.clientY <= 50 || mouseInSettingsMenu) { // Check if cursor is in top area or settings menu
