@@ -1,4 +1,5 @@
 const { ipcRenderer } = require('electron');
+//const { getWeather } = require('./api.js');
 
 // Toggle settings menu visibility
 document.getElementById('settings-button').addEventListener('click', (event) => {
@@ -41,7 +42,22 @@ function updateTimeAndDate() {
 setInterval(updateTimeAndDate, 1000);
 updateTimeAndDate(); // Initial call to set values immediately
 
+// Fetch and display weather data
+async function updateWeather() {
+  const weather = await getWeather();
+  if (weather) {
+    document.getElementById('weather').textContent = `Weather: ${weather.temperature}°C`;
+  } else {
+    document.getElementById('weather').textContent = 'Weather: Unable to fetch data';
+  }
+}
+
+// Call updateWeather on load
+updateWeather();
+
+// Fetch weather data every 5 minutes
+setInterval(updateWeather, 5 * 60 * 1000);
+
 // Placeholder for weather and reminders
-document.getElementById('weather').textContent = 'Weather: Sunny, 25°C';
 document.getElementById('reminders').textContent = 'Reminders: No upcoming events';
 document.getElementById('smart-home').textContent = 'Smart Home: Placeholder';
