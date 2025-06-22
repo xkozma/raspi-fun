@@ -2,3 +2,4 @@
 /node_modules
 python/.env
 /python/temp
+python/assistant_config.json

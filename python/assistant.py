@@ -2,6 +2,7 @@ import speech_recognition as sr
 import os
 import openai
 from dotenv import load_dotenv
+import json
 
 from openai import OpenAI
 from datetime import datetime
@@ -9,6 +10,26 @@ from gtts import gTTS
 import tempfile
 import playsound
 import re
+
+def load_config():
+    config_path = "assistant_config.json"
+    default_config_path = "./default/assistant_config_defaults.json"
+
+    # Check if the configuration file exists
+    if not os.path.exists(config_path):
+        print(f"{config_path} not found. Creating with default settings.")
+        # Load default settings
+        with open(default_config_path, "r") as default_file:
+            default_config = json.load(default_file)
+        # Save default settings to the new config file
+        with open(config_path, "w") as config_file:
+            json.dump(default_config, config_file, indent=4)
+    else:
+        # Load existing configuration
+        with open(config_path, "r") as config_file:
+            default_config = json.load(config_file)
+
+    return default_config
 
 def main():
     recognizer = sr.Recognizer()
@@ -19,6 +40,8 @@ def main():
     # Retrieve OpenAI API key from environment variables
     openai.api_key = os.getenv("OPENAI_API_KEY")
     client = OpenAI()
+    config = load_config()  # Load configuration
+    print("Configuration loaded:", config)
     print("Listening for 'Hey Max'...")
     while True:
         try:
@@ -26,7 +49,7 @@ def main():
                 recognizer.adjust_for_ambient_noise(source)
                 audio = recognizer.listen(source)
 
-            transcript = recognizer.recognize_google(audio_data=audio, language='en-US').lower()
+            transcript = recognizer.recognize_google(audio_data=audio, language=config['language']).lower()
             if "max" in transcript:
                 print("You said:", transcript.replace("hey max", "").strip())
                 print("Assistant script executed")
@@ -54,7 +77,7 @@ def main():
                 print(response_text)
 
                 # Convert the response text to speech
-                tts = gTTS(response_text, lang='en')
+                tts = gTTS(response_text, lang=config['language'][:2])
                 temp_audio_path = os.path.join(os.getcwd(), "temp", "response.mp3")
                 os.makedirs(os.path.dirname(temp_audio_path), exist_ok=True)
                 tts.save(temp_audio_path)
