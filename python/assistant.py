@@ -16,6 +16,8 @@ def main():
             if "hey max" in transcript:
                 print("You said:", transcript.replace("hey max", "").strip())
                 print("Assistant script executed")
+            else:
+                print(transcript)
                 # ...future implementation for assistant functionality...
         except sr.UnknownValueError:
             print("Sorry, I didn't catch that.")
