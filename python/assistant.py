@@ -61,7 +61,7 @@ def main():
                     model="gpt-4.1",
                     tools=[{"type": "web_search_preview"}],
                     input=transcript,
-                    max_output_tokens=100,
+                    max_output_tokens=250,
                 )
 
                 try:
