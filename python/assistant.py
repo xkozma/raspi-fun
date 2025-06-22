@@ -30,7 +30,7 @@ def main():
                 print("You said:", transcript.replace("hey max", "").strip())
                 print("Assistant script executed")
                 now = datetime.now()
-                date_time_sentence = f"!Next part is automatic include, just for your information, not from user, do not use it if not necessary: ###It's {now.strftime('%A, %B %d, %Y')} today.### Never use emojis. Respons like a voice assistant, so your responses are quick and to the point. Never include your sources of information."
+                date_time_sentence = f"!Next part is automatic include, just for your information, not from user, do not use it if not necessary: ###It's {now.strftime('%A, %B %d, %Y')} today.### Never use emojis. Respons like a voice assistant, so your responses are quick and to the point. Never include your sources of information. Respond in one, maximum of two sentences."
                 transcript += f" {date_time_sentence}"
                 # Send the transcript to OpenAI LLM
                 response = client.responses.create(
@@ -58,6 +58,7 @@ def main():
                 tts.save(temp_audio_path)
                 print(f"Response saved to {temp_audio_path}")
                 playsound.playsound(temp_audio_path)
+                os.remove(temp_audio_path)
 
             else:
                 print(transcript)
