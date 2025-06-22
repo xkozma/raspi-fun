@@ -72,7 +72,8 @@ def main():
                     except (IndexError, AttributeError):
                         response_text = "Unable to retrieve a valid response from OpenAI."
 
-                response_text = re.sub(r'\(.*?\)', '', response_text).replace(',', '').strip()
+                response_text = re.sub(r'\(.*?\)', '', response_text)
+                response_text = re.sub(r'(?<!\d),(?!\d)', '', response_text).strip()
                 #response_text = re.sub(r'[^a-zA-Z0-9\s\']', '', response_text)
                 print(response_text)
 
