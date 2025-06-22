@@ -1,2 +1,6 @@
 speechrecognition==3.8.1
 pyaudio==0.2.13
+openai==1.90.0
+python-dotenv==1.0.1
+gTTS==2.5.4
+playsound==1.2.2
