@@ -8,6 +8,7 @@ from datetime import datetime
 from gtts import gTTS
 import tempfile
 import playsound
+import re
 
 def main():
     recognizer = sr.Recognizer()
@@ -25,8 +26,8 @@ def main():
                 recognizer.adjust_for_ambient_noise(source)
                 audio = recognizer.listen(source)
 
-            transcript = recognizer.recognize_google(audio).lower()
-            if "hey max" in transcript:
+            transcript = recognizer.recognize_google(audio_data=audio, language='en-US').lower()
+            if "max" in transcript:
                 print("You said:", transcript.replace("hey max", "").strip())
                 print("Assistant script executed")
                 now = datetime.now()
@@ -48,7 +49,8 @@ def main():
                     except (IndexError, AttributeError):
                         response_text = "Unable to retrieve a valid response from OpenAI."
 
-                response_text = response_text.replace(",", "")
+                response_text = re.sub(r'\(.*?\)', '', response_text).replace(',', '').strip()
+                #response_text = re.sub(r'[^a-zA-Z0-9\s\']', '', response_text)
                 print(response_text)
 
                 # Convert the response text to speech
