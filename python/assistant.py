@@ -83,7 +83,7 @@ def order_pizza(details: str) -> str:
     llm = LangChainOpenAI()
     verification_prompt = (
         f"Analyze these pizza order details: {details}\n"
-        "Respond only with 'yes' or 'no'. Answer 'yes' only if ALL required details are present:\n"
+        "Respond only with 'yes' or 'no'. Answer 'yes' only if ALL required details, ingredients and size are specifically present:\n"
         "1. Pizza size (small, medium, large)\n"
         "2. Specific toppings listed\n"
         "Example valid order: 'large pizza with pepperoni and mushrooms'\n"
