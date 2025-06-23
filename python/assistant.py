@@ -76,33 +76,8 @@ log_tool = Tool(
     func=log_message_tool,
     description="A tool to log messages to the console."
 )
-
-def order_pizza(details: str) -> str:
-    """Simulate ordering a pizza"""
-    # First, verify if we have sufficient pizza details using OpenAI
-    llm = LangChainOpenAI()
-    verification_prompt = (
-        f"Analyze these pizza order details: {details}\n"
-        "Respond only with 'yes' or 'no'. Answer 'yes' only if ALL required details, ingredients and size are specifically present:\n"
-        "1. Pizza size (small, medium, large)\n"
-        "2. Specific toppings listed\n"
-        "Example valid order: 'large pizza with pepperoni and mushrooms'\n"
-        "Example invalid order: 'a tasty pizza' or 'the usual pizza', 'size, toppings, etc.'"
-    )
-    verification = llm.invoke(verification_prompt).strip().lower()
-    
-    if verification == "yes":
-        return f"Pizza ordered successfully with: {details}"
-    else:
-        return "Please provide more details about your pizza order (size, toppings, etc.)"
-
 # Define tools
 tools = [
-    Tool(
-        name="OrderPizza",
-        func=order_pizza,
-        description="Details parameter comes directly from user input. Use this tool to order a pizza. Input should include size, toppings, etc."
-    ),
     Tool(
         name="ChangeLanguage",
         func=change_language,
@@ -151,8 +126,6 @@ def main():
                 # Use the agent to process the request
                 response = agent.run(
                     input=f"""You are a Voice Assistant named Max. You must respond ONLY in {lang_manager.current_language} language.
-                    If you are prompted to use tool, but dont have enough details, ask user for more details.
-                    Never assume any details, for example, if user asks to order a pizza, ask for size, toppings, etc.
                     Current request: {transcript}"""
                 )
                 
