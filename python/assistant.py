@@ -12,8 +12,8 @@ import playsound
 import re
 
 def load_config():
-    config_path = "assistant_config.json"
-    default_config_path = "./default/assistant_config_defaults.json"
+    config_path = os.path.join(os.getcwd(),"python","assistant_config.json")
+    default_config_path = os.path.join(os.getcwd(),"python", "default", "assistant_config_defaults.json")
 
     # Check if the configuration file exists
     if not os.path.exists(config_path):
@@ -79,7 +79,7 @@ def main():
 
                 # Convert the response text to speech
                 tts = gTTS(response_text, lang=config['language'][:2])
-                temp_audio_path = os.path.join(os.getcwd(), "temp", "response.mp3")
+                temp_audio_path = os.path.join(os.getcwd(), "python", "temp", "response.mp3")
                 os.makedirs(os.path.dirname(temp_audio_path), exist_ok=True)
                 tts.save(temp_audio_path)
                 print(f"Response saved to {temp_audio_path}")
