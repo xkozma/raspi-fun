@@ -79,8 +79,22 @@ log_tool = Tool(
 
 def order_pizza(details: str) -> str:
     """Simulate ordering a pizza"""
-    print(f"🍕 Ordering pizza with details: {details}")
-    return f"If you gave me details, I ordered a pizza, if not, I ask for more details. Details: {details}"
+    # First, verify if we have sufficient pizza details using OpenAI
+    llm = LangChainOpenAI()
+    verification_prompt = (
+        f"Analyze these pizza order details: {details}\n"
+        "Respond only with 'yes' or 'no'. Answer 'yes' only if ALL required details are present:\n"
+        "1. Pizza size (small, medium, large)\n"
+        "2. Specific toppings listed\n"
+        "Example valid order: 'large pizza with pepperoni and mushrooms'\n"
+        "Example invalid order: 'a tasty pizza' or 'the usual pizza', 'size, toppings, etc.'"
+    )
+    verification = llm.invoke(verification_prompt).strip().lower()
+    
+    if verification == "yes":
+        return f"Pizza ordered successfully with: {details}"
+    else:
+        return "Please provide more details about your pizza order (size, toppings, etc.)"
 
 # Define tools
 tools = [
