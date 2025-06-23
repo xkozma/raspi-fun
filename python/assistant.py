@@ -52,7 +52,7 @@ class LanguageManager:
     
     def set_language(self, lang_code: str) -> str:
         if lang_code not in self.localization_config['supported_languages']:
-            return f"Language code {lang_code} is not supported. Available languages: {', '.join(self.localization_config['supported_languages'].keys())}"
+            return f"Language code {lang_code} is not supported. Available languages: {', '.join(self.localization_config['supported_languages'].values())}"
         
         config_path = os.path.join(os.getcwd(), "python", "assistant_config.json")
         self.config['language'] = lang_code

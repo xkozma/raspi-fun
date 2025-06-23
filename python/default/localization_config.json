@@ -1,7 +1,7 @@
 {
     "supported_languages": {
-        "en-US": "English (United States)",
-        "en-GB": "English (United Kingdom)",
+        "en-US": "English",
+        "en-GB": "English",
         "sk-SK": "Slovak",
         "cs-CZ": "Czech",
         "de-DE": "German",
