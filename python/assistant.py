@@ -94,8 +94,8 @@ def main():
     lang_manager = LanguageManager()
     
     # Set up LangChain components
-    llm = LangChainOpenAI(temperature=0, openai_api_key=os.getenv("OPENAI_API_KEY"))
-    memory = ConversationBufferMemory(memory_key="chat_history")
+    llm = LangChainOpenAI(temperature=0.7, openai_api_key=os.getenv("OPENAI_API_KEY"))
+    memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
     
     # Initialize the agent
     agent = initialize_agent(
