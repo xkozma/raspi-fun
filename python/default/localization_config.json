@@ -1,0 +1,11 @@
+{
+    "supported_languages": {
+        "en-US": "English (United States)",
+        "en-GB": "English (United Kingdom)",
+        "sk-SK": "Slovak",
+        "cs-CZ": "Czech",
+        "de-DE": "German",
+        "es-ES": "Spanish",
+        "fr-FR": "French",
+        "it-IT": "Italian"}
+    }

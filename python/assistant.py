@@ -30,6 +30,28 @@ def load_config():
 
     return default_config
 
+def load_localization_config():
+    """Load the localization configuration"""
+    config_path = os.path.join(os.getcwd(), "python", "default", "localization_config.json")
+    with open(config_path, 'r') as file:
+        return json.load(file)
+
+def change_language(lang_code: str) -> str:
+    """Change the assistant's language"""
+    localization_config = load_localization_config()
+    if lang_code not in localization_config['supported_languages']:
+        return f"Language code {lang_code} is not supported. Available languages: {', '.join(localization_config['supported_languages'].keys())}"
+    
+    config_path = os.path.join(os.getcwd(), "python", "assistant_config.json")
+    with open(config_path, 'r') as file:
+        config = json.load(file)
+    
+    config['language'] = lang_code
+    with open(config_path, 'w') as file:
+        json.dump(config, file, indent=4)
+    
+    return f"Language changed to {localization_config['supported_languages'][lang_code]} ({lang_code})"
+
 # Define a custom tool to log messages
 def log_message_tool(input_text: str) -> str:
     print(f"Log Tool: {input_text}")
@@ -52,6 +74,11 @@ tools = [
         name="OrderPizza",
         func=order_pizza,
         description="Only use this tool when prompted to order a pizza and have all the details needed. Input should include toppings and size requirements, if not, ask for them in following question and then trigger this."
+    ),
+    Tool(
+        name="ChangeLanguage",
+        func=change_language,
+        description="Changes the assistant's language. Input should be a language code (e.g., 'en-US', 'sk-SK')"
     )
 ]
 
@@ -64,6 +91,11 @@ def main():
     llm = LangChainOpenAI(temperature=0, openai_api_key=os.getenv("OPENAI_API_KEY"))
     memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
     
+    # Get current language name
+    localization_config = load_localization_config()
+    config = load_config()
+    current_language = localization_config['supported_languages'].get(config['language'], 'Unknown')
+    
     # Initialize the agent
     agent = initialize_agent(
         tools=tools,
@@ -73,8 +105,7 @@ def main():
         verbose=True
     )
 
-    config = load_config()
-    print("Configuration loaded:", config)
+    print(f"Configuration loaded. Current language: {current_language} ({config['language']})")
     print("Listening for 'Hey Max'...")
 
     while True:
@@ -82,14 +113,15 @@ def main():
             with microphone as source:
                 recognizer.adjust_for_ambient_noise(source)
                 audio = recognizer.listen(source)
-
             transcript = recognizer.recognize_google(audio_data=audio, language=config['language']).lower()
             if "max" in transcript:
                 print("You said:", transcript.strip())
                 
                 # Use the agent to process the request
                 response = agent.run(
-                    input=f"You are a Voice Assistant named Max, you are a Home Assistant. Be concise in your response: {transcript}"
+                    input=f"""You are a Voice Assistant named Max. You must respond ONLY in {current_language} language.
+                    If the user asks about changing language, use the ChangeLanguage tool with the appropriate language code.
+                    Current request: {transcript}"""
                 )
                 
                 print("Assistant response:", response)
