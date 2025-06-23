@@ -60,7 +60,7 @@ class LanguageManager:
             json.dump(self.config, file, indent=4)
         
         self.current_language = self.get_current_language()
-        return f"Language changed to {self.current_language} ({lang_code}), please respond in {self.current_language} language now."
+        return f"Language changed to {self.current_language}, please respond in {self.current_language} language now."
 
 # Update the change_language tool to use LanguageManager
 def change_language(lang_code: str) -> str:
