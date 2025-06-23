@@ -81,7 +81,7 @@ tools = [
     Tool(
         name="ChangeLanguage",
         func=change_language,
-        description="Changes the assistant's language. Input should be a language code (e.g., 'en-US', 'sk-SK')"
+        description="Only triggers when user explicitly wants to change the language. Changes the assistant's language. Input should be a language code (e.g., 'en-US', 'sk-SK')"
     )
 ]
 
