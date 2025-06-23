@@ -125,8 +125,8 @@ def main():
                 
                 # Use the agent to process the request
                 response = agent.run(
-                    input=f"""You are a Voice Assistant named Max. You must respond ONLY in {lang_manager.current_language} language.
-                    Current request: {transcript}"""
+                    input=f"""You must respond ONLY in {lang_manager.current_language} language, you are a native speaker in that language. You are a Voice Assistant named Max.
+                    User said this as speech to text, there can be mistakes: {transcript}"""
                 )
                 
                 print("Assistant response:", response)
