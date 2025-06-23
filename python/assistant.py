@@ -1,15 +1,14 @@
 import speech_recognition as sr
 import os
-import openai
 from dotenv import load_dotenv
 import json
 
-from openai import OpenAI
-from datetime import datetime
 from gtts import gTTS
-import tempfile
 import playsound
-import re
+from langchain.tools import Tool
+from langchain_openai import OpenAI as LangChainOpenAI
+from langchain.agents import initialize_agent, AgentType
+from langchain.memory import ConversationBufferMemory
 
 def load_config():
     config_path = os.path.join(os.getcwd(),"python","assistant_config.json")
@@ -31,18 +30,53 @@ def load_config():
 
     return default_config
 
+# Define a custom tool to log messages
+def log_message_tool(input_text: str) -> str:
+    print(f"Log Tool: {input_text}")
+    return f"Message logged: {input_text}"
+
+log_tool = Tool(
+    name="LogTool",
+    func=log_message_tool,
+    description="A tool to log messages to the console."
+)
+
+def order_pizza(details: str) -> str:
+    """Simulate ordering a pizza"""
+    print(f"🍕 Ordering pizza with details: {details}")
+    return f"I've placed an order for your pizza with these details: {details}"
+
+# Define tools
+tools = [
+    Tool(
+        name="OrderPizza",
+        func=order_pizza,
+        description="Only use this tool when prompted to order a pizza and have all the details needed. Input should include toppings and size requirements, if not, ask for them in following question and then trigger this."
+    )
+]
+
 def main():
     recognizer = sr.Recognizer()
     microphone = sr.Microphone()
-    # Load environment variables from .env file
     load_dotenv()
 
-    # Retrieve OpenAI API key from environment variables
-    openai.api_key = os.getenv("OPENAI_API_KEY")
-    client = OpenAI()
-    config = load_config()  # Load configuration
+    # Set up LangChain components
+    llm = LangChainOpenAI(temperature=0, openai_api_key=os.getenv("OPENAI_API_KEY"))
+    memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+    
+    # Initialize the agent
+    agent = initialize_agent(
+        tools=tools,
+        llm=llm,
+        agent=AgentType.CONVERSATIONAL_REACT_DESCRIPTION,
+        memory=memory,
+        verbose=True
+    )
+
+    config = load_config()
     print("Configuration loaded:", config)
     print("Listening for 'Hey Max'...")
+
     while True:
         try:
             with microphone as source:
@@ -51,43 +85,26 @@ def main():
 
             transcript = recognizer.recognize_google(audio_data=audio, language=config['language']).lower()
             if "max" in transcript:
-                print("You said:", transcript.replace("hey max", "").strip())
-                print("Assistant script executed")
-                now = datetime.now()
-                date_time_sentence = f"!Next part is automatic include, just for your information, not from user, do not use it if not necessary: ###It's {now.strftime('%A, %B %d, %Y')} today.### Never use emojis. Respons like a voice assistant, so your responses are quick and to the point, never respond with Markdown - respond for easy Text To Speech. Never include your sources of information. Respond in one, maximum of two sentences."
-                transcript += f" {date_time_sentence}"
-                # Send the transcript to OpenAI LLM
-                response = client.responses.create(
-                    model="gpt-4o-mini",
-                    input=transcript,
-                    max_output_tokens=250,
+                print("You said:", transcript.strip())
+                
+                # Use the agent to process the request
+                response = agent.run(
+                    input=f"You are a Voice Assistant named Max, you are a Home Assistant. Be concise in your response: {transcript}"
                 )
-
-                try:
-                    response_text = response.output[0].content[0].text.strip()
-                except (IndexError, AttributeError):
-                    try:
-                        response_text = response.output[1].content[0].text.strip()
-                    except (IndexError, AttributeError):
-                        response_text = "Unable to retrieve a valid response from OpenAI."
-
-                response_text = re.sub(r'\(.*?\)', '', response_text)
-                response_text = re.sub(r'(?<!\d),(?!\d)', '', response_text).strip()
-                #response_text = re.sub(r'[^a-zA-Z0-9\s\']', '', response_text)
-                print(response_text)
-
-                # Convert the response text to speech
-                tts = gTTS(response_text, lang=config['language'][:2])
+                
+                print("Assistant response:", response)
+                
+                # Convert the response to speech
+                tts = gTTS(response, lang=config['language'][:2])
                 temp_audio_path = os.path.join(os.getcwd(), "python", "temp", "response.mp3")
                 os.makedirs(os.path.dirname(temp_audio_path), exist_ok=True)
                 tts.save(temp_audio_path)
-                print(f"Response saved to {temp_audio_path}")
                 playsound.playsound(temp_audio_path)
                 os.remove(temp_audio_path)
-
+            
             else:
                 print(transcript)
-                # ...future implementation for assistant functionality...
+
         except sr.UnknownValueError:
             print("Sorry, I didn't catch that.")
         except sr.RequestError as e:
@@ -95,4 +112,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-print("Assistant script executed")
