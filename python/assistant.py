@@ -58,8 +58,7 @@ def main():
                 transcript += f" {date_time_sentence}"
                 # Send the transcript to OpenAI LLM
                 response = client.responses.create(
-                    model="gpt-4.1",
-                    tools=[{"type": "web_search_preview"}],
+                    model="gpt-4o-mini",
                     input=transcript,
                     max_output_tokens=250,
                 )
