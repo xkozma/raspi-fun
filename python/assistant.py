@@ -10,47 +10,61 @@ from langchain_openai import OpenAI as LangChainOpenAI
 from langchain.agents import initialize_agent, AgentType
 from langchain.memory import ConversationBufferMemory
 
-def load_config():
-    config_path = os.path.join(os.getcwd(),"python","assistant_config.json")
-    default_config_path = os.path.join(os.getcwd(),"python", "default", "assistant_config_defaults.json")
+class LanguageManager:
+    _instance = None
+    
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance._initialize()
+        return cls._instance
+    
+    def _initialize(self):
+        self.config = self.load_config()
+        self.localization_config = self.load_localization_config()
+        self.current_language = self.get_current_language()
+    
+    def load_config(self):
+        config_path = os.path.join(os.getcwd(),"python","assistant_config.json")
+        default_config_path = os.path.join(os.getcwd(),"python", "default", "assistant_config_defaults.json")
 
-    # Check if the configuration file exists
-    if not os.path.exists(config_path):
-        print(f"{config_path} not found. Creating with default settings.")
-        # Load default settings
-        with open(default_config_path, "r") as default_file:
-            default_config = json.load(default_file)
-        # Save default settings to the new config file
-        with open(config_path, "w") as config_file:
-            json.dump(default_config, config_file, indent=4)
-    else:
-        # Load existing configuration
-        with open(config_path, "r") as config_file:
-            default_config = json.load(config_file)
+        if not os.path.exists(config_path):
+            print(f"{config_path} not found. Creating with default settings.")
+            with open(default_config_path, "r") as default_file:
+                config = json.load(default_file)
+            with open(config_path, "w") as config_file:
+                json.dump(config, config_file, indent=4)
+        else:
+            with open(config_path, "r") as config_file:
+                config = json.load(config_file)
+        return config
 
-    return default_config
+    def load_localization_config(self):
+        config_path = os.path.join(os.getcwd(), "python", "default", "localization_config.json")
+        with open(config_path, 'r') as file:
+            return json.load(file)
+    
+    def get_current_language(self):
+        return self.localization_config['supported_languages'].get(self.config['language'], 'Unknown')
+    
+    def get_language_code(self):
+        return self.config['language']
+    
+    def set_language(self, lang_code: str) -> str:
+        if lang_code not in self.localization_config['supported_languages']:
+            return f"Language code {lang_code} is not supported. Available languages: {', '.join(self.localization_config['supported_languages'].keys())}"
+        
+        config_path = os.path.join(os.getcwd(), "python", "assistant_config.json")
+        self.config['language'] = lang_code
+        with open(config_path, 'w') as file:
+            json.dump(self.config, file, indent=4)
+        
+        self.current_language = self.get_current_language()
+        return f"Language changed to {self.current_language} ({lang_code}), please respond in {self.current_language} language now."
 
-def load_localization_config():
-    """Load the localization configuration"""
-    config_path = os.path.join(os.getcwd(), "python", "default", "localization_config.json")
-    with open(config_path, 'r') as file:
-        return json.load(file)
-
+# Update the change_language tool to use LanguageManager
 def change_language(lang_code: str) -> str:
-    """Change the assistant's language"""
-    localization_config = load_localization_config()
-    if lang_code not in localization_config['supported_languages']:
-        return f"Language code {lang_code} is not supported. Available languages: {', '.join(localization_config['supported_languages'].keys())}"
-    
-    config_path = os.path.join(os.getcwd(), "python", "assistant_config.json")
-    with open(config_path, 'r') as file:
-        config = json.load(file)
-    
-    config['language'] = lang_code
-    with open(config_path, 'w') as file:
-        json.dump(config, file, indent=4)
-    
-    return f"Language changed to {localization_config['supported_languages'][lang_code]} ({lang_code})"
+    return LanguageManager().set_language(lang_code)
 
 # Define a custom tool to log messages
 def log_message_tool(input_text: str) -> str:
@@ -66,14 +80,14 @@ log_tool = Tool(
 def order_pizza(details: str) -> str:
     """Simulate ordering a pizza"""
     print(f"🍕 Ordering pizza with details: {details}")
-    return f"I've placed an order for your pizza with these details: {details}"
+    return f"If you gave me details, I ordered a pizza, if not, I ask for more details. Details: {details}"
 
 # Define tools
 tools = [
     Tool(
         name="OrderPizza",
         func=order_pizza,
-        description="Only use this tool when prompted to order a pizza and have all the details needed. Input should include toppings and size requirements, if not, ask for them in following question and then trigger this."
+        description="Details parameter comes directly from user input. Use this tool to order a pizza. Input should include size, toppings, etc."
     ),
     Tool(
         name="ChangeLanguage",
@@ -87,14 +101,12 @@ def main():
     microphone = sr.Microphone()
     load_dotenv()
 
+    # Initialize language manager
+    lang_manager = LanguageManager()
+    
     # Set up LangChain components
     llm = LangChainOpenAI(temperature=0, openai_api_key=os.getenv("OPENAI_API_KEY"))
     memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
-    
-    # Get current language name
-    localization_config = load_localization_config()
-    config = load_config()
-    current_language = localization_config['supported_languages'].get(config['language'], 'Unknown')
     
     # Initialize the agent
     agent = initialize_agent(
@@ -105,7 +117,7 @@ def main():
         verbose=True
     )
 
-    print(f"Configuration loaded. Current language: {current_language} ({config['language']})")
+    print(f"Configuration loaded. Current language: {lang_manager.current_language} ({lang_manager.get_language_code()})")
     print("Listening for 'Hey Max'...")
 
     while True:
@@ -113,21 +125,27 @@ def main():
             with microphone as source:
                 recognizer.adjust_for_ambient_noise(source)
                 audio = recognizer.listen(source)
-            transcript = recognizer.recognize_google(audio_data=audio, language=config['language']).lower()
+
+            transcript = recognizer.recognize_google(
+                audio_data=audio, 
+                language=lang_manager.get_language_code()
+            ).lower()
+
             if "max" in transcript:
                 print("You said:", transcript.strip())
                 
                 # Use the agent to process the request
                 response = agent.run(
-                    input=f"""You are a Voice Assistant named Max. You must respond ONLY in {current_language} language.
-                    If the user asks about changing language, use the ChangeLanguage tool with the appropriate language code.
+                    input=f"""You are a Voice Assistant named Max. You must respond ONLY in {lang_manager.current_language} language.
+                    If you are prompted to use tool, but dont have enough details, ask user for more details.
+                    Never assume any details, for example, if user asks to order a pizza, ask for size, toppings, etc.
                     Current request: {transcript}"""
                 )
                 
                 print("Assistant response:", response)
                 
-                # Convert the response to speech
-                tts = gTTS(response, lang=config['language'][:2])
+                # Convert the response to speech using current language
+                tts = gTTS(response, lang=lang_manager.get_language_code()[:2])
                 temp_audio_path = os.path.join(os.getcwd(), "python", "temp", "response.mp3")
                 os.makedirs(os.path.dirname(temp_audio_path), exist_ok=True)
                 tts.save(temp_audio_path)
