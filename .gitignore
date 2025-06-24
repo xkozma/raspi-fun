@@ -3,3 +3,4 @@
 python/.env
 /python/temp
 python/assistant_config.json
+/vvenv
