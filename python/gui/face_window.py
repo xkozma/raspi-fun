@@ -9,7 +9,7 @@ class FaceWindow:
     def __init__(self):
         pygame.init()
         self.width = 640
-        self.height = 475
+        self.height = 479
         # Add NOFRAME flag to create borderless window
         self.screen = pygame.display.set_mode((self.width, self.height), pygame.NOFRAME)
         pygame.display.set_caption("Max Assistant")
