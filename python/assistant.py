@@ -1,9 +1,7 @@
-import speech_recognition as sr
 import os
 from dotenv import load_dotenv
 import json
 import pyttsx3
-import playsound
 from langchain.tools import Tool
 from langchain_openai import OpenAI as LangChainOpenAI
 from langchain.agents import initialize_agent, AgentType
