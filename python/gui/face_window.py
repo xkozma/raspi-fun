@@ -7,8 +7,8 @@ import time
 class FaceWindow:
     def __init__(self):
         pygame.init()
-        self.width = 480
-        self.height = 320
+        self.width = 640
+        self.height = 480
         self.screen = pygame.display.set_mode((self.width, self.height))
         pygame.display.set_caption("Max Assistant")
         
