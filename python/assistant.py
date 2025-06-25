@@ -2,9 +2,12 @@ import speech_recognition as sr
 import os
 from dotenv import load_dotenv
 import json
-
 from gtts import gTTS
-import playsound
+import pygame
+import requests
+import io
+import threading
+from urllib.parse import quote
 from langchain.tools import Tool
 from langchain_openai import OpenAI as LangChainOpenAI
 from langchain.agents import initialize_agent, AgentType
@@ -113,6 +116,34 @@ tools = [
     )
 ]
 
+def stream_audio(text: str, lang_code: str):
+    # Initialize pygame mixer if not already done
+    if not pygame.mixer.get_init():
+        pygame.mixer.init()
+    
+    # URL encode the text for the query parameter
+    encoded_text = quote(text)
+    
+    # Google Translate TTS URL (same as used by gTTS)
+    url = f"https://translate.google.com/translate_tts?ie=UTF-8&tl={lang_code[:2]}&client=tw-ob&q={encoded_text}"
+    
+    # Stream the audio data in chunks
+    response = requests.get(url, stream=True)
+    audio_data = io.BytesIO()
+    
+    for chunk in response.iter_content(chunk_size=4096):
+        if chunk:
+            audio_data.write(chunk)
+    
+    # Prepare audio for playback
+    audio_data.seek(0)
+    pygame.mixer.music.load(audio_data)
+    pygame.mixer.music.play()
+    
+    # Wait for the audio to finish
+    while pygame.mixer.music.get_busy():
+        pygame.time.wait(100)
+
 def main():
     recognizer = sr.Recognizer()
     microphone = sr.Microphone()
@@ -165,13 +196,8 @@ def main():
                     
                     print("Assistant response:", response)
                     
-                    # Convert the response to speech using current language
-                    tts = gTTS(response, lang=lang_manager.get_language_code()[:2])
-                    temp_audio_path = os.path.join(os.getcwd(), "python", "temp", "response.mp3")
-                    os.makedirs(os.path.dirname(temp_audio_path), exist_ok=True)
-                    tts.save(temp_audio_path)
-                    playsound.playsound(temp_audio_path)
-                    os.remove(temp_audio_path)
+                    # Replace old TTS code with streaming version
+                    stream_audio(response, lang_manager.get_language_code())
                     face_window.set_listening(False)
                 
                 else:
