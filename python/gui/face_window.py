@@ -92,7 +92,7 @@ class FaceWindow:
         # Draw eyes
         for eye_pos in [self.left_eye_pos, self.right_eye_pos]:
             # Eye white
-            blink_squish = 1.0 - (math.sin(self.blink_progress * math.pi) * 0.95 if self.is_blinking else 0)
+            blink_squish = 1.0 - (math.sin(self.blink_progress * math.pi) * 1.9 if self.is_blinking else 0)  # Changed from 0.95 to 1.9
             pygame.draw.ellipse(self.screen, self.WHITE,
                               (eye_pos[0] - self.eye_radius,
                                eye_pos[1] - self.eye_radius * blink_squish,
