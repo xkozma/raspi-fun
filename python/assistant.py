@@ -9,6 +9,8 @@ from langchain.tools import Tool
 from langchain_openai import OpenAI as LangChainOpenAI
 from langchain.agents import initialize_agent, AgentType
 from langchain.memory import ConversationBufferMemory
+import asyncio
+from tapo_light_control import turn_on_lights, turn_off_lights, get_light_info
 
 class LanguageManager:
     _instance = None
@@ -76,12 +78,38 @@ log_tool = Tool(
     func=log_message_tool,
     description="A tool to log messages to the console."
 )
-# Define tools
+
+# Define wrapper functions for async tools
+def turn_lights_on(_):
+    return asyncio.run(turn_on_lights())
+
+def turn_lights_off(_):
+    return asyncio.run(turn_off_lights())
+
+def get_lights_status(_):
+    return asyncio.run(get_light_info())
+
+# Update tools list before agent initialization
 tools = [
     Tool(
         name="ChangeLanguage",
         func=change_language,
         description="Only triggers when user explicitly wants to change the language. Changes the assistant's language. Input should be a language code (e.g., 'en-US', 'sk-SK')"
+    ),
+    Tool(
+        name="TurnLightsOn",
+        func=turn_lights_on,
+        description="Turns on the Tapo smart lights"
+    ),
+    Tool(
+        name="TurnLightsOff",
+        func=turn_lights_off,
+        description="Turns off the Tapo smart lights"
+    ),
+    Tool(
+        name="GetLightsStatus",
+        func=get_lights_status,
+        description="Gets the current status of the Tapo smart lights"
     )
 ]
 
