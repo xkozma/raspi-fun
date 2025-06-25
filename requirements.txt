@@ -3,8 +3,10 @@ openai==1.90.0
 python-dotenv==1.0.1
 gTTS==2.5.4
 playsound==1.2.2
-langchain==0.2.17
-langchain-community==0.2.17
-langchain-openai==0.1.25
+langchain
+langchain-community
+langchain-openai
 pygame==2.6.1
 tapo==0.8.2
+langgraph
+pyaudio
