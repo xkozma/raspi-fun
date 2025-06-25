@@ -3,14 +3,21 @@ import math
 import random
 from threading import Thread, Event
 import time
+import signal
 
 class FaceWindow:
     def __init__(self):
         pygame.init()
         self.width = 640
         self.height = 480
-        self.screen = pygame.display.set_mode((self.width, self.height))
+        # Add NOFRAME flag to create borderless window
+        self.screen = pygame.display.set_mode((self.width, self.height), pygame.NOFRAME)
         pygame.display.set_caption("Max Assistant")
+        # Hide cursor
+        pygame.mouse.set_visible(False)
+        
+        # Setup signal handler for Ctrl+C
+        signal.signal(signal.SIGINT, self._signal_handler)
         
         # Colors
         self.BLACK = (0, 0, 0)
@@ -35,6 +42,10 @@ class FaceWindow:
         self.update_thread = Thread(target=self._update_loop)
         self.update_thread.daemon = True
         self.update_thread.start()
+
+    def _signal_handler(self, sig, frame):
+        print("\nClosing face window...")
+        self.close()
 
     def _update_loop(self):
         clock = pygame.time.Clock()
@@ -103,4 +114,5 @@ class FaceWindow:
 
     def close(self):
         self.running = False
+        pygame.mouse.set_visible(True)  # Restore cursor visibility
         pygame.quit()
