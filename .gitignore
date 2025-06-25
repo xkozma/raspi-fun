@@ -4,3 +4,4 @@ python/.env
 /python/temp
 python/assistant_config.json
 /vvenv
+/python/gui/__pycache__
