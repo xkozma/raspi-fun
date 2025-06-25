@@ -2,10 +2,6 @@ import speech_recognition as sr
 import os
 from dotenv import load_dotenv
 import json
-import asyncio
-import edge_tts
-import pygame
-import io
 
 from gtts import gTTS
 import playsound
@@ -13,6 +9,7 @@ from langchain.tools import Tool
 from langchain_openai import OpenAI as LangChainOpenAI
 from langchain.agents import initialize_agent, AgentType
 from langchain.memory import ConversationBufferMemory
+import asyncio
 from tapo_light_control import turn_on_lights, turn_off_lights, get_light_info
 
 class LanguageManager:
@@ -116,36 +113,6 @@ tools = [
     )
 ]
 
-async def text_to_speech(text: str, language_code: str):
-    # Initialize pygame mixer for audio playback if not already initialized
-    if not pygame.mixer.get_init():
-        pygame.mixer.init()
-
-    # Select voice based on language code
-    voice = "en-US-ChristopherNeural"  # default fallback
-    if language_code.startswith("sk"):
-        voice = "sk-SK-LukasNeural"
-    elif language_code.startswith("cs"):
-        voice = "cs-CZ-AntoninNeural"
-
-    communicate = edge_tts.Communicate(text, voice)
-    
-    # Create a byte stream for audio data
-    audio_stream = io.BytesIO()
-    
-    async for chunk in communicate.stream():
-        if chunk["type"] == "audio":
-            audio_stream.write(chunk["data"])
-    
-    # Prepare audio for playback
-    audio_stream.seek(0)
-    pygame.mixer.music.load(audio_stream)
-    pygame.mixer.music.play()
-    
-    # Wait for the audio to finish playing
-    while pygame.mixer.music.get_busy():
-        await asyncio.sleep(0.1)
-
 def main():
     recognizer = sr.Recognizer()
     microphone = sr.Microphone()
@@ -168,7 +135,7 @@ def main():
         llm=llm,
         agent=AgentType.CONVERSATIONAL_REACT_DESCRIPTION,
         memory=memory,
-        verbose=False
+        verbose=True
     )
 
     print(f"Configuration loaded. Current language: {lang_manager.current_language} ({lang_manager.get_language_code()})")
@@ -190,6 +157,7 @@ def main():
                     face_window.set_listening(True)
                     print("You said:", transcript.strip())
                     
+                    # Use the agent to process the request
                     response = agent.run(
                         input=f"""You must respond ONLY in {lang_manager.current_language} language, you are a native speaker in that language. You are a Voice Assistant named Max.
                         User said this as speech to text, there can be mistakes: {transcript}"""
@@ -197,8 +165,13 @@ def main():
                     
                     print("Assistant response:", response)
                     
-                    # Use the new streaming TTS function
-                    asyncio.run(text_to_speech(response, lang_manager.get_language_code()))
+                    # Convert the response to speech using current language
+                    tts = gTTS(response, lang=lang_manager.get_language_code()[:2])
+                    temp_audio_path = os.path.join(os.getcwd(), "python", "temp", "response.mp3")
+                    os.makedirs(os.path.dirname(temp_audio_path), exist_ok=True)
+                    tts.save(temp_audio_path)
+                    playsound.playsound(temp_audio_path)
+                    os.remove(temp_audio_path)
                     face_window.set_listening(False)
                 
                 else:
