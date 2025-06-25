@@ -2,8 +2,7 @@ import speech_recognition as sr
 import os
 from dotenv import load_dotenv
 import json
-
-from gtts import gTTS
+import pyttsx3
 import playsound
 from langchain.tools import Tool
 from langchain_openai import OpenAI as LangChainOpenAI
@@ -11,6 +10,8 @@ from langchain.agents import initialize_agent, AgentType
 from langchain.memory import ConversationBufferMemory
 import asyncio
 from tapo_light_control import turn_on_lights, turn_off_lights, get_light_info
+from vosk import Model, KaldiRecognizer
+import pyaudio
 
 class LanguageManager:
     _instance = None
@@ -64,6 +65,45 @@ class LanguageManager:
         self.current_language = self.get_current_language()
         return f"Language changed to {self.current_language}, please respond in {self.current_language} language now."
 
+class TTSManager:
+    _instance = None
+    
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance._initialize()
+        return cls._instance
+    
+    def _initialize(self):
+        self.engine = pyttsx3.init()
+        self.voices = self.engine.getProperty('voices')
+        self.voice_map = self._create_voice_map()
+        
+    def _create_voice_map(self):
+        # Map language codes to available system voices
+        voice_map = {}
+        for voice in self.voices:
+            lang_code = voice.languages[0] if voice.languages else ''
+            # Store both full language code and short version
+            voice_map[lang_code] = voice.id
+            if '-' in lang_code:
+                short_code = lang_code.split('-')[0]
+                voice_map[short_code] = voice.id
+        return voice_map
+    
+    def speak(self, text: str, lang_code: str):
+        # Get the short language code (e.g., 'en' from 'en-US')
+        short_lang = lang_code[:2] if '-' in lang_code else lang_code
+        
+        # Try to find appropriate voice
+        voice_id = self.voice_map.get(lang_code) or self.voice_map.get(short_lang)
+        
+        if voice_id:
+            self.engine.setProperty('voice', voice_id)
+        
+        self.engine.say(text)
+        self.engine.runAndWait()
+
 # Update the change_language tool to use LanguageManager
 def change_language(lang_code: str) -> str:
     return LanguageManager().set_language(lang_code)
@@ -113,10 +153,31 @@ tools = [
     )
 ]
 
+def setup_vosk():
+    # Make sure to download a model from https://alphacephei.com/vosk/models
+    # and place it in a 'model' directory
+    model_path = os.path.join(os.getcwd(), "python", "model")
+    if not os.path.exists(model_path):
+        raise RuntimeError("Please download a Vosk model and place it in the 'python/model' directory")
+    return Model(model_path)
+
 def main():
-    recognizer = sr.Recognizer()
-    microphone = sr.Microphone()
     load_dotenv()
+    
+    # Initialize Vosk
+    model = setup_vosk()
+    
+    # Initialize PyAudio
+    p = pyaudio.PyAudio()
+    stream = p.open(format=pyaudio.paInt16,
+                   channels=1,
+                   rate=16000,
+                   input=True,
+                   frames_per_buffer=8000)
+    stream.start_stream()
+    
+    # Initialize Vosk recognizer
+    recognizer = KaldiRecognizer(model, 16000)
 
     # Initialize language manager
     lang_manager = LanguageManager()
@@ -134,56 +195,48 @@ def main():
         tools=tools,
         llm=llm,
         agent=AgentType.CONVERSATIONAL_REACT_DESCRIPTION,
-        memory=memory,
-        verbose=True
+        memory=memory
     )
+
+    # Initialize TTS
+    tts_manager = TTSManager()
 
     print(f"Configuration loaded. Current language: {lang_manager.current_language} ({lang_manager.get_language_code()})")
     print("Listening for 'Hey Max'...")
 
     try:
         while True:
-            try:
-                with microphone as source:
-                    recognizer.adjust_for_ambient_noise(source)
-                    audio = recognizer.listen(source)
+            data = stream.read(4000, exception_on_overflow=False)
+            if len(data) == 0:
+                break
 
-                transcript = recognizer.recognize_google(
-                    audio_data=audio, 
-                    language=lang_manager.get_language_code()
-                ).lower()
+            if recognizer.AcceptWaveform(data):
+                result = json.loads(recognizer.Result())
+                if result.get("text", ""):
+                    transcript = result["text"].lower()
+                    print("Recognized:", transcript)
 
-                if "max" in transcript:
-                    face_window.set_listening(True)
-                    print("You said:", transcript.strip())
-                    
-                    # Use the agent to process the request
-                    response = agent.run(
-                        input=f"""You must respond ONLY in {lang_manager.current_language} language, you are a native speaker in that language. You are a Voice Assistant named Max.
-                        User said this as speech to text, there can be mistakes: {transcript}"""
-                    )
-                    
-                    print("Assistant response:", response)
-                    
-                    # Convert the response to speech using current language
-                    tts = gTTS(response, lang=lang_manager.get_language_code()[:2])
-                    temp_audio_path = os.path.join(os.getcwd(), "python", "temp", "response.mp3")
-                    os.makedirs(os.path.dirname(temp_audio_path), exist_ok=True)
-                    tts.save(temp_audio_path)
-                    playsound.playsound(temp_audio_path)
-                    os.remove(temp_audio_path)
-                    face_window.set_listening(False)
-                
-                else:
-                    print(transcript)
-
-            except sr.UnknownValueError:
-                print("Sorry, I didn't catch that.")
-            except sr.RequestError as e:
-                print(f"Could not request results; {e}")
+                    if "max" in transcript:
+                        face_window.set_listening(True)
+                        print("You said:", transcript.strip())
+                        
+                        # Use the agent to process the request
+                        response = agent.run(
+                            input=f"""You must respond ONLY in {lang_manager.current_language} language, you are a native speaker in that language. You are a Voice Assistant named Max.
+                            User said this as speech to text, there can be mistakes: {transcript}"""
+                        )
+                        
+                        print("Assistant response:", response)
+                        
+                        # Replace gTTS with pyttsx3
+                        tts_manager.speak(response, lang_manager.get_language_code())
+                        face_window.set_listening(False)
 
     except KeyboardInterrupt:
         face_window.close()
+        stream.stop_stream()
+        stream.close()
+        p.terminate()
 
 if __name__ == "__main__":
     main()
