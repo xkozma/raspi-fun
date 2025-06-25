@@ -10,6 +10,7 @@ import asyncio
 from tapo_light_control import turn_on_lights, turn_off_lights, get_light_info
 from vosk import Model, KaldiRecognizer
 import pyaudio
+import subprocess
 
 class LanguageManager:
     _instance = None
@@ -76,6 +77,10 @@ class TTSManager:
         self.engine = pyttsx3.init()
         self.voices = self.engine.getProperty('voices')
         self.voice_map = self._create_voice_map()
+        self.use_festival = os.environ.get('USE_FESTIVAL', '').lower() == 'true'
+        # Set default voice properties
+        self.engine.setProperty('rate', 150)
+        self.engine.setProperty('volume', 0.9)
         
     def _create_voice_map(self):
         # Map language codes to available system voices
@@ -90,17 +95,39 @@ class TTSManager:
         return voice_map
     
     def speak(self, text: str, lang_code: str):
-        # Get the short language code (e.g., 'en' from 'en-US')
-        short_lang = lang_code[:2] if '-' in lang_code else lang_code
-        
-        # Try to find appropriate voice
-        voice_id = self.voice_map.get(lang_code) or self.voice_map.get(short_lang)
-        
-        if voice_id:
-            self.engine.setProperty('voice', voice_id)
-        
-        self.engine.say(text)
-        self.engine.runAndWait()
+        if self.use_festival:
+            self.speak_festival(text)
+        else:
+            # Get the short language code (e.g., 'en' from 'en-US')
+            short_lang = lang_code[:2] if '-' in lang_code else lang_code
+            
+            # Try to find appropriate voice
+            voice_id = self.voice_map.get(lang_code) or self.voice_map.get(short_lang)
+            
+            if voice_id:
+                self.engine.setProperty('voice', voice_id)
+            
+            self.engine.say(text)
+            self.engine.runAndWait()
+    
+    def speak_festival(self, text: str):
+        """Use Festival for TTS"""
+        try:
+            # Create a temporary script file
+            script = f"""(voice_cmu_us_slt_arctic_hts)
+(SayText "{text}")"""
+            
+            with open("/tmp/festival_test.scm", "w") as f:
+                f.write(script)
+            
+            # Run festival with the script
+            subprocess.run(["festival", "-b", "/tmp/festival_test.scm"])
+            
+        except Exception as e:
+            print(f"Festival TTS error: {e}")
+            # Fallback to pyttsx3
+            self.engine.say(text)
+            self.engine.runAndWait()
 
 # Update the change_language tool to use LanguageManager
 def change_language(lang_code: str) -> str:
@@ -198,7 +225,6 @@ def main():
 
     # Initialize TTS
     tts_manager = TTSManager()
-
     print(f"Configuration loaded. Current language: {lang_manager.current_language} ({lang_manager.get_language_code()})")
     print("Listening for 'Hey Max'...")
 
