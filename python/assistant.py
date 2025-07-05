@@ -7,7 +7,7 @@ from gtts import gTTS
 import playsound
 
 from language_manager import LanguageManager
-from llm import get_agent
+from llm import stream_graph_updates, get_graph
 
 def main():
     recognizer = sr.Recognizer()
@@ -22,7 +22,7 @@ def main():
     face_window = FaceWindow()
     
     # Set up LangChain agent
-    agent = get_agent(lang_manager)
+    graph = get_graph()
 
     print(f"Configuration loaded. Current language: {lang_manager.current_language} ({lang_manager.get_language_code()})")
     print("Listening for 'Hey Max'...")
@@ -42,23 +42,22 @@ def main():
                 if "max" in transcript:
                     face_window.set_listening(True)
                     print("You said:", transcript.strip())
-                    
-                    # Use the agent to process the request
-                    response = agent.run(
-                        input=f"""You must respond ONLY in {lang_manager.current_language} language, you are a native speaker in that language. You are a Voice Assistant named Max.
+                    input=f"""You must respond ONLY in {lang_manager.current_language} language, you are a native speaker in that language. You are a Voice Assistant named Max.
                         User said this as speech to text, there can be mistakes: {transcript}"""
-                    )
+                    # Use the agent to process the request
+                    response = stream_graph_updates(graph, input)
                     
                     print("Assistant response:", response)
                     
                     # Convert the response to speech using current language
-                    tts = gTTS(response, lang=lang_manager.get_language_code()[:2])
-                    temp_audio_path = os.path.join(os.getcwd(), "python", "temp", "response.mp3")
-                    os.makedirs(os.path.dirname(temp_audio_path), exist_ok=True)
-                    tts.save(temp_audio_path)
-                    playsound.playsound(temp_audio_path)
-                    os.remove(temp_audio_path)
-                    face_window.set_listening(False)
+                    if response is not None:
+                        tts = gTTS(response, lang=lang_manager.get_language_code()[:2])
+                        temp_audio_path = os.path.join(os.getcwd(), "python", "temp", "response.mp3")
+                        os.makedirs(os.path.dirname(temp_audio_path), exist_ok=True)
+                        tts.save(temp_audio_path)
+                        playsound.playsound(temp_audio_path)
+                        os.remove(temp_audio_path)
+                        face_window.set_listening(False)
                 
                 else:
                     print(transcript)
