@@ -9,3 +9,4 @@ langchain-openai==0.1.25
 pygame==2.6.1
 tapo==0.8.1
 annotated-types==0.7.0
+langgraph==0.4.5
